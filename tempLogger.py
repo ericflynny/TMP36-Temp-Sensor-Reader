@@ -1,0 +1,200 @@
+import serial
+import serial.tools.list_ports
+import time
+import csv
+import sys
+import argparse
+import random
+
+def find_arduino():
+    ports = serial.tools.list_ports.comports()
+    for port in ports:
+        if 'usbmodem' in port.device.lower() or 'usbserial' in port.device.lower() or 'arduino' in port.description.lower():
+            return port.device
+    if ports:
+        return ports[0].device
+    return None
+
+def generate_html(csv_file, html_file):
+    times = []
+    temps_c = []
+    temps_f = []
+    
+    try:
+        with open(csv_file, 'r') as f:
+            reader = csv.reader(f)
+            header = next(reader, None)
+            for row in reader:
+                if len(row) >= 4:
+                    try:
+                        times.append(float(row[0]))
+                        temps_c.append(float(row[2]))
+                        temps_f.append(float(row[3]))
+                    except ValueError:
+                        pass
+    except FileNotFoundError:
+        pass
+        
+    html_content = f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Temperature Graph</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta http-equiv="refresh" content="10"> <!-- Auto refresh every 10 seconds -->
+</head>
+<body style="font-family: sans-serif; text-align: center;">
+    <h2>Live Temperature Data</h2>
+    <div style="width: 80%; margin: auto;">
+        <canvas id="tempChart"></canvas>
+    </div>
+    <script>
+        const ctx = document.getElementById('tempChart').getContext('2d');
+        const tempChart = new Chart(ctx, {{
+            type: 'line',
+            data: {{
+                labels: {times},
+                datasets: [
+                    {{
+                        label: 'Temperature (C)',
+                        data: {temps_c},
+                        borderColor: 'blue',
+                        backgroundColor: 'rgba(0, 0, 255, 0.1)',
+                        yAxisID: 'y',
+                        tension: 0.1
+                    }},
+                    {{
+                        label: 'Temperature (F)',
+                        data: {temps_f},
+                        borderColor: 'red',
+                        backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                        yAxisID: 'y1',
+                        tension: 0.1
+                    }}
+                ]
+            }},
+            options: {{
+                responsive: true,
+                interaction: {{
+                  mode: 'index',
+                  intersect: false,
+                }},
+                scales: {{
+                    x: {{ title: {{ display: true, text: 'Time (s)' }} }},
+                    y: {{ 
+                        type: 'linear', 
+                        display: true, 
+                        position: 'left',
+                        title: {{ display: true, text: 'Temp (C)' }} 
+                    }},
+                    y1: {{ 
+                        type: 'linear', 
+                        display: true, 
+                        position: 'right',
+                        title: {{ display: true, text: 'Temp (F)' }},
+                        grid: {{ drawOnChartArea: false }}
+                    }}
+                }}
+            }}
+        }});
+    </script>
+</body>
+</html>"""
+    
+    with open(html_file, 'w') as f:
+        f.write(html_content)
+
+def main():
+    parser = argparse.ArgumentParser(description="Log Arduino Temperature Data")
+    parser.add_argument('--demo', action='store_true', help="Run in demo mode without Arduino")
+    args = parser.parse_args()
+
+    csv_file = 'temperature_data.csv'
+    html_file = 'temperature_graph.html'
+    
+    if args.demo:
+        print("Running in DEMO mode. Simulating data...")
+        with open(csv_file, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(["Time_s","Sample","Temp_C","Temp_F","Voltage_V","Raw_ADC"])
+        
+        time_s = 0
+        sample = 0
+        while True:
+            temp_c = 25.0 + random.uniform(-2, 2)
+            temp_f = temp_c * 9/5 + 32
+            volts = 0.75 + random.uniform(-0.02, 0.02)
+            raw = int((volts / 5.0) * 1023)
+            
+            with open(csv_file, 'a', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow([time_s, sample, f"{temp_c:.2f}", f"{temp_f:.2f}", f"{volts:.3f}", raw])
+            
+            print(f"Logged sample {sample} at {time_s}s: {temp_c:.2f} C / {temp_f:.2f} F")
+            generate_html(csv_file, html_file)
+            
+            time_s += 10
+            sample += 1
+            time.sleep(2) # speed up for demo
+            
+    # Real mode
+    try:
+        import serial
+    except ImportError:
+        print("Error: pyserial is not installed. Please install it by running:")
+        print("pip install pyserial")
+        sys.exit(1)
+        
+    port = find_arduino()
+    if not port:
+        print("Error: Could not find an Arduino. Make sure it is plugged in.")
+        print("If it is plugged in, try specifying the port manually in the script.")
+        sys.exit(1)
+        
+    print(f"Connecting to Arduino on {port}...")
+    try:
+        ser = serial.Serial(port, 115200, timeout=2)
+    except Exception as e:
+        print(f"Failed to connect to {port}: {e}")
+        print("Make sure the Serial Monitor in Arduino IDE is CLOSED so the port isn't busy.")
+        sys.exit(1)
+        
+    time.sleep(2) # Wait for Arduino to reset
+    
+    # Initialize CSV if needed
+    with open(csv_file, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(["Time_s","Sample","Temp_C","Temp_F","Voltage_V","Raw_ADC"])
+        
+    print("Switching Arduino to CSV mode...")
+    ser.write(b"csv\n")
+    time.sleep(0.5)
+    ser.flushInput()
+    
+    print("Listening for data... (Press Ctrl+C to stop)")
+    print(f"Saving to {csv_file} and generating {html_file}...")
+    
+    try:
+        while True:
+            if ser.in_waiting > 0:
+                line = ser.readline().decode('utf-8', errors='replace').strip()
+                if not line:
+                    continue
+                    
+                # Basic check if line is valid CSV data
+                parts = line.split(',')
+                if len(parts) == 6 and parts[0].replace('.','',1).isdigit():
+                    with open(csv_file, 'a', newline='') as f:
+                        f.write(line + '\n')
+                    print(f"Logged: {line}")
+                    generate_html(csv_file, html_file)
+                else:
+                    print(f"Message: {line}")
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        print("\nStopping logger.")
+    finally:
+        if 'ser' in locals():
+            ser.close()
+
+if __name__ == '__main__':
+    main()
