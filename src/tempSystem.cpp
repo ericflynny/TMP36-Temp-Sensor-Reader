@@ -149,6 +149,17 @@ void TempSystem::transmitTemperature()
             Serial.println(volts, 3);
             break;
         }
+        case OutputFormat::Teleplot:
+        {
+            // Teleplot extension format (>var:value)
+            Serial.print(F(">Temp_C:"));
+            Serial.println(tempC, 2);
+            Serial.print(F(">Temp_F:"));
+            Serial.println(tempF, 2);
+            Serial.print(F(">Voltage:"));
+            Serial.println(volts, 3);
+            break;
+        }
         case OutputFormat::Graph:
         {
             // Live ASCII/bar graph
@@ -206,6 +217,7 @@ void TempSystem::printHelp()
     Serial.println(F("  graph  : Switch output to live ASCII bar graph"));
     Serial.println(F("  plot   : Switch output to Arduino Serial Plotter format"));
     Serial.println(F("  text   : Switch output to human-readable text"));
+    Serial.println(F("  teleplot: Switch output to Teleplot extension format"));
     Serial.println(F("  read   : Immediately sample and transmit current temperature"));
     Serial.println(F("  header : Re-print the CSV column header"));
     Serial.println(F("  help   : Display this help menu"));
@@ -256,6 +268,11 @@ void TempSystem::handleSerialCommands()
         {
             _outputFormat = OutputFormat::Text;
             Serial.println(F("Switched to standard text format."));
+        }
+        else if (cmd == "teleplot")
+        {
+            _outputFormat = OutputFormat::Teleplot;
+            Serial.println(F("# Switched to Teleplot extension format."));
         }
         else if (cmd == "header")
         {

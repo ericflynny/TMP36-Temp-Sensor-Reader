@@ -2,8 +2,10 @@
 #include "tempSystem.hpp"
 
 
-void setup()
+int main(void)
 {
+    init(); // Required Arduino hardware initialization (timers, ADC, etc.)
+
     // Setup serial port and wait for enumeration
     Serial.begin(115200);
     while (!Serial){ ; }
@@ -15,6 +17,6 @@ void setup()
     tempSystem.process();
 
     Serial.println("System halted. Press Reset button on board to restart.");
-}
 
-void loop() { } // tempSystem.process() controls loop
+    return 0;
+}

@@ -7,24 +7,30 @@ import sys
 import argparse
 import random
 
+
 def find_arduino():
     ports = serial.tools.list_ports.comports()
     for port in ports:
-        if 'usbmodem' in port.device.lower() or 'usbserial' in port.device.lower() or 'arduino' in port.description.lower():
+        if (
+            "usbmodem" in port.device.lower()
+            or "usbserial" in port.device.lower()
+            or "arduino" in port.description.lower()
+        ):
             return port.device
     if ports:
         return ports[0].device
     return None
 
+
 def generate_html(csv_file, html_file):
     times = []
     temps_c = []
     temps_f = []
-    
+
     try:
-        with open(csv_file, 'r') as f:
+        with open(csv_file, "r") as f:
             reader = csv.reader(f)
-            header = next(reader, None)
+            _ = next(reader, None)  # Header
             for row in reader:
                 if len(row) >= 4:
                     try:
@@ -35,7 +41,7 @@ def generate_html(csv_file, html_file):
                         pass
     except FileNotFoundError:
         pass
-        
+
     html_content = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -81,15 +87,15 @@ def generate_html(csv_file, html_file):
                 }},
                 scales: {{
                     x: {{ title: {{ display: true, text: 'Time (s)' }} }},
-                    y: {{ 
-                        type: 'linear', 
-                        display: true, 
+                    y: {{
+                        type: 'linear',
+                        display: true,
                         position: 'left',
-                        title: {{ display: true, text: 'Temp (C)' }} 
+                        title: {{ display: true, text: 'Temp (C)' }}
                     }},
-                    y1: {{ 
-                        type: 'linear', 
-                        display: true, 
+                    y1: {{
+                        type: 'linear',
+                        display: true,
                         position: 'right',
                         title: {{ display: true, text: 'Temp (F)' }},
                         grid: {{ drawOnChartArea: false }}
@@ -100,43 +106,59 @@ def generate_html(csv_file, html_file):
     </script>
 </body>
 </html>"""
-    
-    with open(html_file, 'w') as f:
+
+    with open(html_file, "w") as f:
         f.write(html_content)
+
 
 def main():
     parser = argparse.ArgumentParser(description="Log Arduino Temperature Data")
-    parser.add_argument('--demo', action='store_true', help="Run in demo mode without Arduino")
+    parser.add_argument(
+        "--demo", action="store_true", help="Run in demo mode without Arduino"
+    )
     args = parser.parse_args()
 
-    csv_file = 'temperature_data.csv'
-    html_file = 'temperature_graph.html'
-    
+    csv_file = "temperature_data.csv"
+    html_file = "temperature_graph.html"
+
     if args.demo:
         print("Running in DEMO mode. Simulating data...")
-        with open(csv_file, 'w', newline='') as f:
+        with open(csv_file, "w", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow(["Time_s","Sample","Temp_C","Temp_F","Voltage_V","Raw_ADC"])
-        
+            writer.writerow(
+                ["Time_s", "Sample", "Temp_C", "Temp_F", "Voltage_V", "Raw_ADC"]
+            )
+
         time_s = 0
         sample = 0
         while True:
             temp_c = 25.0 + random.uniform(-2, 2)
-            temp_f = temp_c * 9/5 + 32
+            temp_f = temp_c * 9 / 5 + 32
             volts = 0.75 + random.uniform(-0.02, 0.02)
             raw = int((volts / 5.0) * 1023)
-            
-            with open(csv_file, 'a', newline='') as f:
+
+            with open(csv_file, "a", newline="") as f:
                 writer = csv.writer(f)
-                writer.writerow([time_s, sample, f"{temp_c:.2f}", f"{temp_f:.2f}", f"{volts:.3f}", raw])
-            
-            print(f"Logged sample {sample} at {time_s}s: {temp_c:.2f} C / {temp_f:.2f} F")
+                writer.writerow(
+                    [
+                        time_s,
+                        sample,
+                        f"{temp_c:.2f}",
+                        f"{temp_f:.2f}",
+                        f"{volts:.3f}",
+                        raw,
+                    ]
+                )
+
+            print(
+                f"Logged sample {sample} at {time_s}s: {temp_c:.2f} C / {temp_f:.2f} F"
+            )
             generate_html(csv_file, html_file)
-            
+
             time_s += 10
             sample += 1
-            time.sleep(2) # speed up for demo
-            
+            time.sleep(2)  # speed up for demo
+
     # Real mode
     try:
         import serial
@@ -144,53 +166,59 @@ def main():
         print("Error: pyserial is not installed. Please install it by running:")
         print("pip install pyserial")
         sys.exit(1)
-        
+
     port = find_arduino()
     if not port:
         print("Error: Could not find an Arduino. Make sure it is plugged in.")
         print("If it is plugged in, try specifying the port manually in the script.")
         sys.exit(1)
-        
+
     print(f"Connecting to Arduino on {port}...")
     try:
         ser = serial.Serial(port, 115200, timeout=2)
     except Exception as e:
         print(f"Failed to connect to {port}: {e}")
-        print("Make sure the Serial Monitor in Arduino IDE is CLOSED so the port isn't busy.")
+        print(
+            "Make sure the Serial Monitor in Arduino IDE is CLOSED so the port isn't busy."
+        )
         sys.exit(1)
-        
-    time.sleep(2) # Wait for Arduino to reset
-    
+
+    time.sleep(2)  # Wait for Arduino to reset
+
     # Initialize CSV if needed
-    with open(csv_file, 'w', newline='') as f:
+    with open(csv_file, "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["Time_s","Sample","Temp_C","Temp_F","Voltage_V","Raw_ADC"])
-        
+        writer.writerow(
+            ["Time_s", "Sample", "Temp_C", "Temp_F", "Voltage_V", "Raw_ADC"]
+        )
+
     print("Switching Arduino to CSV mode...")
     ser.write(b"csv\n")
     time.sleep(0.5)
     ser.flushInput()
-    
+
     print("Listening for data... (Press Ctrl+C to stop)")
     print(f"Saving to {csv_file} and generating {html_file}...")
-    
+
     try:
         while True:
             if ser.in_waiting > 0:
-                line = ser.readline().decode('utf-8', errors='replace').strip()
+                line = ser.readline().decode("utf-8", errors="replace").strip()
                 if not line:
                     continue
-                    
+
                 # Basic check if line is valid CSV data
-                parts = line.split(',')
-                if len(parts) == 6 and parts[0].replace('.','',1).isdigit():
-                    with open(csv_file, 'a', newline='') as f:
-                        f.write(line + '\n')
-                    
+                parts = line.split(",")
+                if len(parts) == 6 and parts[0].replace(".", "", 1).isdigit():
+                    with open(csv_file, "a", newline="") as f:
+                        f.write(line + "\n")
+
                     # Print a nice human-readable version to the terminal
                     time_s, sample, temp_c, temp_f, volts, raw = parts
-                    print(f"[Sample #{sample} | Time: {time_s}s] Temp: {temp_c}°C ({temp_f}°F) | Voltage: {volts}V")
-                    
+                    print(
+                        f"[Sample #{sample} | Time: {time_s}s] Temp: {temp_c}°C ({temp_f}°F) | Voltage: {volts}V"
+                    )
+
                     generate_html(csv_file, html_file)
                 else:
                     print(line)
@@ -198,8 +226,9 @@ def main():
     except KeyboardInterrupt:
         print("\nStopping logger.")
     finally:
-        if 'ser' in locals():
+        if "ser" in locals():
             ser.close()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

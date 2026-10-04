@@ -8,7 +8,8 @@ enum class OutputFormat : uint8_t
     Csv = 0,    // Pure CSV format (Time_s,Sample,Temp_C,Temp_F,Voltage_V,Raw_ADC)
     Text,       // Human-readable formatted text
     Plotter,    // Arduino Serial Plotter (Temp_C:xx,Temp_F:yy,Voltage:zz)
-    Graph       // Live ASCII bar graph over Serial Monitor
+    Graph,      // Live ASCII bar graph over Serial Monitor
+    Teleplot    // Teleplot extension format (>var:value)
 };
 
 class TempSystem

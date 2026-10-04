@@ -35,6 +35,20 @@ The following project will:
 
 The system supports several output formats that can be toggled via the Serial Monitor:
 
+### Python Automated Logger & Graph (Recommended)
+Run the Python logger script on your host machine to automatically read the serial port, log data directly to a `.csv` file, and render a live-updating interactive graph:
+```bash
+# Log live data from Arduino to temperature_data.csv and generate temperature_graph.html
+python3 tempLogger.py
+
+# Test / demo without hardware connected:
+python3 tempLogger.py --demo
+```
+- Open `temperature_graph.html` in Safari or Chrome to view an interactive graph of temperature over time. It will refresh automatically.
+- All data points are saved in `temperature_data.csv`.
+
+*Note: Make sure to close the Arduino IDE Serial Monitor before running the script so the script can access the port.*
+
 ### ASCII Live Graph
 In the Serial Monitor, type `graph` and press Enter. The Arduino will print a live ASCII-based bar graph showing temperature over time natively in the serial console.
 
