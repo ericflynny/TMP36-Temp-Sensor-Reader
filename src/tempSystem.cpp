@@ -1,4 +1,5 @@
 #include "tempSystem.hpp"
+#include <avr/sleep.h>
 
 TempSystem::TempSystem(unsigned long timerIntervalMs, uint8_t tempPin)
     : _timer(timerIntervalMs),
@@ -74,6 +75,9 @@ void TempSystem::transmitTemperature()
 
 void TempSystem::process()
 {
+    // IDLE mode stops the CPU but keeps Timer1, Serial, and ADC running
+    set_sleep_mode(SLEEP_MODE_IDLE);
+
     while (true)
     {
         // Check if Timer1 periodic interrupt triggered
@@ -81,5 +85,9 @@ void TempSystem::process()
         {
             transmitTemperature();
         }
+
+        // Put the CPU to sleep to save power.
+        // It will automatically wake up when the Timer1 interrupt fires.
+        sleep_mode();
     }
 }
