@@ -1,11 +1,8 @@
-#include <Arduino.h>
-#include "tempSystem.hpp"
+#include "src/tempSystem.hpp"
 
-#ifdef PIO_BUILD
-int main(void)
+#ifndef PIO_BUILD
+void setup()
 {
-    init(); // Required Arduino hardware initialization (timers, ADC, etc.)
-
     // Setup serial port and wait for enumeration
     Serial.begin(115200);
     while (!Serial){ ; }
@@ -17,7 +14,7 @@ int main(void)
     tempSystem.process();
 
     Serial.println("System halted. Press Reset button on board to restart.");
-
-    return 0;
 }
+
+void loop() { } // tempSystem.process() controls loop
 #endif

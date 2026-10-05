@@ -1,6 +1,6 @@
 # Serial Transmission of Temperature
 
-Eric Flynn, September 27th, 2026
+Eric Flynn, Fall 2026
 
 EN.605.715: Software Development For Real-Time Embedded Systems, Johns Hopkins University
 
@@ -13,6 +13,7 @@ The following project will:
 5. Flash the onboard Arduino LED (Pin 13) with each transmission
 6. Allow the user to enter commands via the Serial Monitor (`read`, `temp`, `csv`, `plot`, `graph`, `text`, `exit`)
 7. Support multiple output formats natively over serial including text, CSV, plotter format, and an ASCII graph
+8. Support dual-compilation using either standard Arduino IDE (`setup`/`loop`) or VS Code PlatformIO (standard C++ `main`)
 
 ## Hardware Connections
 - **TMP36 Left Pin (Vs)** -> Arduino 5V
@@ -22,10 +23,19 @@ The following project will:
 ## Required Parts
 1. Arduino (tested using a Mega2560 R3). If you do not have access to an Arduino board you can simulate the functionality here: https://wokwi.com
 2. TMP36 Temperature Sensor
-3. Arduino IDE
 
 ## Steps to Compile and Program Arduino
-1. Open `transmitTemp.ino` in the Arduino IDE
+
+This project is structured to support **both** VS Code (PlatformIO) and the standard Arduino IDE.
+
+### Option A: VS Code with PlatformIO (Recommended)
+1. Open this project folder in VS Code
+2. Connect the Arduino to your host PC via USB
+3. Click the PlatformIO **Upload** button (the right arrow `→` on the bottom blue status bar)
+4. To view the output, you can open the PlatformIO Serial Monitor (plug icon). The baud rate is automatically configured to 115200 in `platformio.ini`.
+
+### Option B: Standard Arduino IDE
+1. Open `Transmit Temperature.ino` in the Arduino IDE. (The IDE will automatically pull in the core files from the `src/` folder).
 2. Connect the Arduino to your host PC
 3. At the top of the Arduino IDE, select the connected Arduino board and serial port
 4. File -> Upload (This will compile and upload the firmware to the Arduino)
@@ -33,10 +43,11 @@ The following project will:
 
 ## Output Formats and Commands
 
-The system supports several output formats that can be toggled via the Serial Monitor:
+The system supports several output formats that can be toggled via serial commands:
 
-### Python Automated Logger & Graph (Recommended)
-Run the Python logger script on your host machine to automatically read the serial port, log data directly to a `.csv` file, and render a live-updating interactive graph:
+### Python Automated Logger & HTML Graph (For Experiments)
+Run the Python logger script on your host machine to automatically read the serial port, log data directly to a `.csv` file, and render a live-updating web graph. This is perfect for capturing the thermal step response experiment (e.g., placing the Arduino in a refrigerator).
+
 ```bash
 # Log live data from Arduino to temperature_data.csv and generate temperature_graph.html
 python3 tempLogger.py
@@ -44,18 +55,19 @@ python3 tempLogger.py
 # Test / demo without hardware connected:
 python3 tempLogger.py --demo
 ```
-- Open `temperature_graph.html` in Safari or Chrome to view an interactive graph of temperature over time. It will refresh automatically.
+- Open `temperature_graph.html` in Safari or Chrome to view an interactive graph. It refreshes automatically.
 - All data points are saved in `temperature_data.csv`.
 
-*Note: Make sure to close the Arduino IDE Serial Monitor before running the script so the script can access the port.*
+*Note: Make sure to close the Serial Monitor before running the script so the script can access the port.*
 
 ### ASCII Live Graph
-In the Serial Monitor, type `graph` and press Enter. The Arduino will print a live ASCII-based bar graph showing temperature over time natively in the serial console.
+In the Serial Monitor, type `graph` and press Enter. The Arduino will print a live ASCII-based bar graph showing temperature over time natively in the console.
 
 ### Arduino IDE Built-in Serial Plotter
-1. In the Serial Monitor, type `plot` and press Enter (switches output to Plotter format).
-2. Go to **Tools -> Serial Plotter** (or press `Cmd + Shift + L`).
-3. Set the baud rate to **115200 baud** to see a live real-time graph drawn in the Arduino IDE.
+If using the Arduino IDE, type `plot` and press Enter, then open **Tools -> Serial Plotter** to see a live real-time graph.
 
 ### Direct CSV Mode
-In the Serial Monitor, type `csv` and press Enter. The Arduino will output pure comma-separated values (`Time_s,Sample,Temp_C,Temp_F,Voltage_V,Raw_ADC`) ready to copy directly into Excel or a `.csv` file.
+In the Serial Monitor, type `csv` and press Enter. The Arduino will output pure comma-separated values (`Time_s,Sample,Temp_C,Temp_F,Voltage_V,Raw_ADC`) ready to copy directly into Excel.
+
+## Acknowledgments
+*Note: The Antigravity AI coding assistant (Google) was utilized to help refactor and document portions of this project.*
