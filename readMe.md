@@ -9,11 +9,9 @@ The following project will:
 1. Read analog voltage from a TMP36 temperature sensor connected to pin A0
 2. Configure Timer1 in CTC mode to trigger an interrupt periodically every 10 seconds
 3. Convert the sensor voltage to temperature in degrees Celsius and Fahrenheit
-4. Transmit the temperature data over the Serial Monitor at 115200 baud
+4. Transmit the temperature data natively over the Serial Monitor in CSV format at 115200 baud
 5. Flash the onboard Arduino LED (Pin 13) with each transmission
-6. Allow the user to enter commands via the Serial Monitor (`read`, `temp`, `csv`, `plot`, `graph`, `text`, `exit`)
-7. Support multiple output formats natively over serial including text, CSV, plotter format, and an ASCII graph
-8. Support dual-compilation using either standard Arduino IDE (`setup`/`loop`) or VS Code PlatformIO (standard C++ `main`)
+6. Support dual-compilation using either standard Arduino IDE (`setup`/`loop`) or VS Code PlatformIO (standard C++ `main`)
 
 ## Hardware Connections
 - **TMP36 Left Pin (Vs)** -> Arduino 5V
@@ -32,20 +30,14 @@ This project is structured to support **both** VS Code (PlatformIO) and the stan
 1. Open this project folder in VS Code
 2. Connect the Arduino to your host PC via USB
 3. Click the PlatformIO **Upload** button (the right arrow `→` on the bottom blue status bar)
-4. To view the output, you can open the PlatformIO Serial Monitor (plug icon). The baud rate is automatically configured to 115200 in `platformio.ini`.
 
 ### Option B: Standard Arduino IDE
 1. Open `Transmit Temperature.ino` in the Arduino IDE. (The IDE will automatically pull in the core files from the `src/` folder).
 2. Connect the Arduino to your host PC
 3. At the top of the Arduino IDE, select the connected Arduino board and serial port
 4. File -> Upload (This will compile and upload the firmware to the Arduino)
-5. Open the Serial Monitor and set the baud rate to **115200 baud**
 
-## Output Formats and Commands
-
-The system supports several output formats that can be toggled via serial commands:
-
-### Python Automated Logger & HTML Graph (For Experiments)
+## Python Automated Logger & HTML Graph (For Experiments)
 Run the Python logger script on your host machine to automatically read the serial port, log data directly to a `.csv` file, and render a live-updating web graph. This is perfect for capturing the thermal step response experiment (e.g., placing the Arduino in a refrigerator).
 
 ```bash
@@ -58,16 +50,7 @@ python3 tempLogger.py --demo
 - Open `temperature_graph.html` in Safari or Chrome to view an interactive graph. It refreshes automatically.
 - All data points are saved in `temperature_data.csv`.
 
-*Note: Make sure to close the Serial Monitor before running the script so the script can access the port.*
-
-### ASCII Live Graph
-In the Serial Monitor, type `graph` and press Enter. The Arduino will print a live ASCII-based bar graph showing temperature over time natively in the console.
-
-### Arduino IDE Built-in Serial Plotter
-If using the Arduino IDE, type `plot` and press Enter, then open **Tools -> Serial Plotter** to see a live real-time graph.
-
-### Direct CSV Mode
-In the Serial Monitor, type `csv` and press Enter. The Arduino will output pure comma-separated values (`Time_s,Sample,Temp_C,Temp_F,Voltage_V,Raw_ADC`) ready to copy directly into Excel.
+*Note: Make sure to close any Serial Monitors before running the script so the script can access the port.*
 
 ## Acknowledgments
 *Note: The Antigravity AI coding assistant (Google) was utilized to help refactor and document portions of this project.*

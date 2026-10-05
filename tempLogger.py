@@ -25,18 +25,16 @@ def find_arduino():
 def generate_html(csv_file, html_file):
     times = []
     temps_c = []
-    temps_f = []
 
     try:
         with open(csv_file, "r") as f:
             reader = csv.reader(f)
-            _ = next(reader, None)  # Header
+            _ = next(reader, None) # Header
             for row in reader:
-                if len(row) >= 4:
+                if len(row) >= 3:
                     try:
                         times.append(float(row[0]))
                         temps_c.append(float(row[2]))
-                        temps_f.append(float(row[3]))
                     except ValueError:
                         pass
     except FileNotFoundError:
@@ -62,19 +60,11 @@ def generate_html(csv_file, html_file):
                 labels: {times},
                 datasets: [
                     {{
-                        label: 'Temperature (C)',
+                        label: 'Temperature',
                         data: {temps_c},
                         borderColor: 'blue',
                         backgroundColor: 'rgba(0, 0, 255, 0.1)',
                         yAxisID: 'y',
-                        tension: 0.1
-                    }},
-                    {{
-                        label: 'Temperature (F)',
-                        data: {temps_f},
-                        borderColor: 'red',
-                        backgroundColor: 'rgba(255, 0, 0, 0.1)',
-                        yAxisID: 'y1',
                         tension: 0.1
                     }}
                 ]
@@ -87,18 +77,26 @@ def generate_html(csv_file, html_file):
                 }},
                 scales: {{
                     x: {{ title: {{ display: true, text: 'Time (s)' }} }},
-                    y: {{
-                        type: 'linear',
-                        display: true,
+                    y: {{ 
+                        type: 'linear', 
+                        display: true, 
                         position: 'left',
-                        title: {{ display: true, text: 'Temp (C)' }}
+                        title: {{ display: true, text: 'Temp (C)' }} 
                     }},
                     y1: {{
                         type: 'linear',
                         display: true,
                         position: 'right',
                         title: {{ display: true, text: 'Temp (F)' }},
-                        grid: {{ drawOnChartArea: false }}
+                        grid: {{ drawOnChartArea: false }},
+                        afterBuildTicks: function(scale) {{
+                            const y = scale.chart.scales.y;
+                            if (y && y.ticks) {{
+                                scale.ticks = y.ticks.map(t => ({{ value: t.value * 1.8 + 32 }}));
+                                scale.min = y.min * 1.8 + 32;
+                                scale.max = y.max * 1.8 + 32;
+                            }}
+                        }}
                     }}
                 }}
             }}
@@ -192,8 +190,6 @@ def main():
             ["Time_s", "Sample", "Temp_C", "Temp_F", "Voltage_V", "Raw_ADC"]
         )
 
-    print("Switching Arduino to CSV mode...")
-    ser.write(b"csv\n")
     time.sleep(0.5)
     ser.flushInput()
 
